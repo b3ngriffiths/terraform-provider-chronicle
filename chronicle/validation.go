@@ -210,7 +210,7 @@ func validateFeedMicrosoftOffice365ManagementActivityContentType(v interface{}, 
 		FeedMicrosoftOffice365ManagementActivityContentTypeDPLAll}
 	contentType := v.(string)
 	if !contains(contentTypes, contentType) {
-		return diag.FromErr(fmt.Errorf("conten type %s not valid, valid types are: %s", contentType, contentTypes))
+		return diag.FromErr(fmt.Errorf("content type %s not valid, valid types are: %s", contentType, contentTypes))
 	}
 	return nil
 }
@@ -221,7 +221,7 @@ func validateReferenceListContentType(v interface{}, k cty.Path) diag.Diagnostic
 		string(chronicle.ReferenceListContentTypeDefault)}
 	contentType := v.(string)
 	if !contains(contentTypes, contentType) {
-		return diag.FromErr(fmt.Errorf("conten type %s not valid, valid types are: %s", contentType, contentTypes))
+		return diag.FromErr(fmt.Errorf("content type %s not valid, valid types are: %s", contentType, contentTypes))
 	}
 	return nil
 }

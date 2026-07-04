@@ -183,7 +183,7 @@ func (f *ResourceFeedAzureBlobStoreV2) flattenDetailsFromReadOperation(originalC
 	return []map[string]interface{}{{
 		"azure_uri":             readAzureConf.AzureURI,
 		"source_delete_options": originalAzureConf.SourceDeleteOptions, // not returned
-		"max_lookback_days":     readAzureConf.MaxLookbackDays,
+		"max_lookback_days":     lookbackDaysOrOriginal(readAzureConf.MaxLookbackDays, originalAzureConf.MaxLookbackDays),
 		// replace authentication block with original values because they are not returned within a read request
 		"authentication": []map[string]interface{}{authMap},
 	}}

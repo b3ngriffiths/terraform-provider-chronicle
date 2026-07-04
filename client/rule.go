@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -30,7 +29,7 @@ type YARALValidation struct {
 func (cli *Client) GetRule(id string) (*Rule, error) {
 	url := fmt.Sprintf("%s/%s", cli.RuleBasePath, id)
 
-	err := cli.rateLimiters.DetectionGetRule.Wait(context.Background())
+	err := cli.rateLimiters.DetectionGetRule.Wait(cli.context)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while getting rule %s", id))
 	}
@@ -52,7 +51,7 @@ func (cli *Client) GetRule(id string) (*Rule, error) {
 func (cli *Client) CreateRule(rule Rule) (string, error) {
 	url := cli.RuleBasePath
 
-	err := cli.rateLimiters.DetectionCreateRule.Wait(context.Background())
+	err := cli.rateLimiters.DetectionCreateRule.Wait(cli.context)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while creating rule %v", rule))
 	}
@@ -74,7 +73,7 @@ func (cli *Client) CreateRule(rule Rule) (string, error) {
 func (cli *Client) CreateRuleVersion(rule Rule) error {
 	url := fmt.Sprintf("%s/%s:createVersion", cli.RuleBasePath, rule.ID)
 
-	err := cli.rateLimiters.DetectionCreateRuleVersion.Wait(context.Background())
+	err := cli.rateLimiters.DetectionCreateRuleVersion.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while creating rule version %v", rule))
 	}
@@ -96,7 +95,7 @@ func (cli *Client) ChangeAlertingRule(id string, alertingEnabled bool) error {
 	}
 	url := fmt.Sprintf("%s/%s:%s", cli.RuleBasePath, id, operation)
 
-	err := cli.rateLimiters.DetectionEnableAlertingRule.Wait(context.Background())
+	err := cli.rateLimiters.DetectionEnableAlertingRule.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while change alerting enabled on rule %s", id))
 	}
@@ -118,7 +117,7 @@ func (cli *Client) ChangeLiveRule(id string, liveEnabled bool) error {
 	}
 	url := fmt.Sprintf("%s/%s:%s", cli.RuleBasePath, id, operation)
 
-	err := cli.rateLimiters.DetectionEnableLiveRule.Wait(context.Background())
+	err := cli.rateLimiters.DetectionEnableLiveRule.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while change live enabled on rule %s", id))
 	}
@@ -134,7 +133,7 @@ func (cli *Client) ChangeLiveRule(id string, liveEnabled bool) error {
 func (cli *Client) DeleteRule(id string) error {
 	url := fmt.Sprintf("%s/%s", cli.RuleBasePath, id)
 
-	err := cli.rateLimiters.DetectionDeleteRule.Wait(context.Background())
+	err := cli.rateLimiters.DetectionDeleteRule.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while deleting rule %s", id))
 	}
@@ -153,7 +152,7 @@ func (cli *Client) VerifyYARARule(yaraRule string) (bool, error) {
 		"ruleText": yaraRule,
 	}
 
-	err := cli.rateLimiters.DetectionVerifyYARARule.Wait(context.Background())
+	err := cli.rateLimiters.DetectionVerifyYARARule.Wait(cli.context)
 	if err != nil {
 		return false, errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while verifying rule %s", yaraRule))
 	}

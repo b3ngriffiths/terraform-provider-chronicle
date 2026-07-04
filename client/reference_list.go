@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -33,7 +32,7 @@ const ReferenceListContentTypeCIDR ReferenceListContentType = "CIDR"
 func (cli *Client) GetReferenceList(name string) (*ReferenceList, error) {
 	url := fmt.Sprintf("%s/%s", cli.ReferenceListsBasePath, name)
 
-	err := cli.rateLimiters.ReferenceListsGetList.Wait(context.Background())
+	err := cli.rateLimiters.ReferenceListsGetList.Wait(cli.context)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while getting reference list %s", name))
 	}
@@ -76,7 +75,7 @@ func (cli *Client) GetReferenceList(name string) (*ReferenceList, error) {
 func (cli *Client) CreateReferenceList(referenceList ReferenceList) (string, error) {
 	url := cli.ReferenceListsBasePath
 
-	err := cli.rateLimiters.ReferenceListsCreateList.Wait(context.Background())
+	err := cli.rateLimiters.ReferenceListsCreateList.Wait(cli.context)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while creating reference list %v", referenceList))
 	}
@@ -98,7 +97,7 @@ func (cli *Client) CreateReferenceList(referenceList ReferenceList) (string, err
 func (cli *Client) UpdateReferenceList(referenceList ReferenceList, updateLines, updateDescription bool) (*ReferenceList, error) {
 	url := fmt.Sprintf("%s?update_mask=%s", cli.ReferenceListsBasePath, CreateReferenceListUpdateMask(updateLines, updateDescription))
 
-	err := cli.rateLimiters.ReferenceListsUpdateList.Wait(context.Background())
+	err := cli.rateLimiters.ReferenceListsUpdateList.Wait(cli.context)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while updating reference list %v", referenceList))
 	}

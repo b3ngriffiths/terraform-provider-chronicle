@@ -27,61 +27,51 @@ func Provider() *schema.Provider {
 			"bigqueryapi_credentials": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				Sensitive:        true,
 				ValidateDiagFunc: validateCredentials,
 				ConflictsWith:    []string{"bigqueryapi_access_token"},
-				Description: `BigQuery API crendential. Local file path or content.
+				Description: `BigQuery API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_BIGQUERY_CREDENTIALS environment variable, which expects base64 encoded credential.`,
 			},
 
 			"bigqueryapi_access_token": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Sensitive:     true,
 				ConflictsWith: []string{"bigqueryapi_credentials"},
 				Description:   `BigQuery API access token. Local file path or content.`,
 			},
 			"backstoryapi_credentials": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				Sensitive:        true,
 				ValidateDiagFunc: validateCredentials,
-				ConflictsWith:    []string{"backstoryapi_access_token"},
 				Description: `Backstory API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_BACKSTORY_CREDENTIALS environment variable, which expects base64 encoded credential.`,
-			},
-
-			"backstoryapi_access_token": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"backstoryapi_credentials"},
-				Description:   `Backstory API access token. Local file path or content.`,
 			},
 			"ingestionapi_credentials": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				Sensitive:        true,
 				ValidateDiagFunc: validateCredentials,
-				ConflictsWith:    []string{"ingestionapi_access_token"},
-				Description: `Ingestion API crendential. Local file path or content.
+				Description: `Ingestion API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_INGESTION_CREDENTIALS environment variable, which expects base64 encoded credential.`,
-			},
-
-			"ingestionapi_access_token": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"ingestionapi_credentials"},
-				Description:   `Ingestion API access token. Local file path or content.`,
 			},
 			"forwarderapi_credentials": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				Sensitive:        true,
 				ValidateDiagFunc: validateCredentials,
 				ConflictsWith:    []string{"forwarderapi_access_token"},
-				Description: `Forwarder API crendential. Local file path or content.
+				Description: `Forwarder API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_FORWARDER_CREDENTIALS environment variable, which expects base64 encoded credential.`,
 			},
 			"forwarderapi_access_token": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Sensitive:     true,
 				ConflictsWith: []string{"forwarderapi_credentials"},
-				Description:   `Forwarder API Access token. Local file path or content.`,
+				Description:   `Forwarder API access token. Local file path or content.`,
 			},
 
 			"request_timeout": {
@@ -232,18 +222,23 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData, p *schema.Pr
 		}
 	}
 
-	opts := getAPIAuthOpts(d)
+	// Timeout and attempts options must be applied before the authentication
+	// options: the authentication options build the underlying HTTP clients,
+	// which capture the request timeout at construction time.
+	opts := make([]chronicle.Option, 0)
 
 	if v, ok := d.GetOk("request_timeout"); ok {
 		opts = append(opts, chronicle.WithRequestTimeout(time.Duration(v.(int))*time.Second))
 	}
 	if v, ok := d.GetOk("request_attempts"); ok {
 		attempts := v.(int)
-		if attempts < 0 {
-			return nil, diag.FromErr(fmt.Errorf("request_attempts must be non-negative"))
+		if attempts < 1 {
+			return nil, diag.FromErr(fmt.Errorf("request_attempts must be at least 1"))
 		}
 		opts = append(opts, chronicle.WithRequestAttempts(uint(attempts)))
 	}
+
+	opts = append(opts, getAPIAuthOpts(d)...)
 
 	//nolint:all
 	stopCtx, ok := schema.StopContext(ctx)
@@ -303,8 +298,6 @@ func getAPIAuthOpts(d *schema.ResourceData) []chronicle.Option {
 
 	if v, ok := d.GetOk("backstoryapi_credentials"); ok {
 		opts = append(opts, chronicle.WithBackstoryAPICredentials(v.(string)))
-	} else if v, ok := d.GetOk("backstoryapi_credentials"); ok {
-		opts = append(opts, chronicle.WithBackstoryAPIAccessToken(v.(string)))
 	} else {
 		env := envSearch(chronicle.BackstoryAPIEnvVar)
 		if env != "" {
@@ -314,8 +307,6 @@ func getAPIAuthOpts(d *schema.ResourceData) []chronicle.Option {
 
 	if v, ok := d.GetOk("ingestionapi_credentials"); ok {
 		opts = append(opts, chronicle.WithIngestionAPICredentials(v.(string)))
-	} else if v, ok := d.GetOk("ingestionapi_credentials"); ok {
-		opts = append(opts, chronicle.WithIngestionAPIAccessToken(v.(string)))
 	} else {
 		env := envSearch(chronicle.IngestionAPIEnvVar)
 		if env != "" {

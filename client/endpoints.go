@@ -80,63 +80,43 @@ const (
 	RegionAsiaSouthEast1 = "asia-southeast1"
 )
 
-var Regions = []string{RegionUS, RegionEurope, RegionEuropeWest2, RegionAsiaSouthEast1}
+// Regions holds the Chronicle regions with regionalized legacy API endpoints
+// ({region}-backstory.googleapis.com); "us" uses the global endpoints.
+// See https://cloud.google.com/chronicle/docs/reference/feed-management-api.
+var Regions = []string{
+	RegionUS,
+	RegionEurope,
+	"africa-south1",
+	"asia-northeast1",
+	"asia-south1",
+	RegionAsiaSouthEast1,
+	"asia-southeast2",
+	"australia-southeast1",
+	"europe-central2",
+	RegionEuropeWest2,
+	"europe-west3",
+	"europe-west6",
+	"europe-west9",
+	"europe-west12",
+	"me-central1",
+	"me-central2",
+	"me-west1",
+	"northamerica-northeast2",
+	"southamerica-east1",
+}
 
 const APIDomain = "googleapis.com"
 
-const (
-	SearchAPIKey          = "SerachAPI"
-	DetectionEngineAPIKey = "DetectionEngineAPI"
-	FeedManagementAPIKey  = "FeedManagementAPI"
-	IngestionAPIKey       = "IngestionAPI"
-	GCTIAPIKey            = "GCTIAPI"
-	RBACAPIKey            = "RBACAPI"
-	ReferenceListsAPIKey  = "ReferenceListsAPI"
-)
+const backstorySubDomain = "backstory"
 
-var RegionalSubDomains = map[string]map[string]string{
-	SearchAPIKey: {
-		RegionUS:             "backstory",
-		RegionEurope:         "europe-backstory",
-		RegionEuropeWest2:    "europe-west2-backstory",
-		RegionAsiaSouthEast1: "asia-southeast1-backstory",
-	},
-	DetectionEngineAPIKey: {
-		RegionUS:             "backstory",
-		RegionEurope:         "europe-backstory",
-		RegionEuropeWest2:    "europe-west2-backstory",
-		RegionAsiaSouthEast1: "asia-southeast1-backstory",
-	},
-	FeedManagementAPIKey: {
-		RegionUS:             "backstory",
-		RegionEurope:         "europe-backstory",
-		RegionEuropeWest2:    "europe-west2-backstory",
-		RegionAsiaSouthEast1: "asia-southeast1-backstory",
-	},
-	IngestionAPIKey: {
-		RegionUS:             "malachiteingestion-pa",
-		RegionEurope:         "europe-malachiteingestion-pa",
-		RegionEuropeWest2:    "europe-west2-malachiteingestion-pa",
-		RegionAsiaSouthEast1: "asia-southeast1-malachiteingestion-pa",
-	},
-	GCTIAPIKey: {
-		RegionUS:             "backstory",
-		RegionEurope:         "backstory",
-		RegionEuropeWest2:    "backstory",
-		RegionAsiaSouthEast1: "backstory",
-	},
-	RBACAPIKey: {
-		RegionUS:             "backstory",
-		RegionEurope:         "europe-backstory",
-		RegionEuropeWest2:    "europe-west2-backstory",
-		RegionAsiaSouthEast1: "asia-southeast1-backstory",
-	},
-	ReferenceListsAPIKey: {
-		RegionUS:             "backstory",
-		RegionEurope:         "europe-backstory",
-		RegionEuropeWest2:    "europe-west2-backstory",
-		RegionAsiaSouthEast1: "asia-southeast1-backstory",
-	},
+// regionalSubDomain derives the regional endpoint subdomain for a given API
+// subdomain: the US region uses the global endpoint, every other region
+// prefixes it (e.g. europe-backstory, asia-southeast1-malachiteingestion-pa).
+func regionalSubDomain(subDomain, region string) string {
+	if region == RegionUS || region == "" {
+		return subDomain
+	}
+	return fmt.Sprintf("%s-%s", region, subDomain)
 }
 
 const (
@@ -156,20 +136,22 @@ const (
 )
 
 func GenerateDefaultBasePaths(region string) map[string]string {
+	backstory := regionalSubDomain(backstorySubDomain, region)
+
 	var DefaultBasePaths = map[string]string{
-		EventsBasePathKey:   getBasePathFromDomainsAndPath("/v1/events", RegionalSubDomains[SearchAPIKey][region]),
-		AlertBasePathKey:    getBasePathFromDomainsAndPath("/v1/alert", RegionalSubDomains[SearchAPIKey][region]),
-		ArtifactBasePathKey: getBasePathFromDomainsAndPath("/v1/artifact", RegionalSubDomains[SearchAPIKey][region]),
-		AliasBasePathKey:    getBasePathFromDomainsAndPath("/v1/alias", RegionalSubDomains[SearchAPIKey][region]),
-		AssetBasePathKey:    getBasePathFromDomainsAndPath("/v1/asset", RegionalSubDomains[SearchAPIKey][region]),
-		IOCBasePathKey:      getBasePathFromDomainsAndPath("/v1/ioc", RegionalSubDomains[SearchAPIKey][region]),
+		EventsBasePathKey:   getBasePathFromDomainsAndPath("/v1/events", backstory),
+		AlertBasePathKey:    getBasePathFromDomainsAndPath("/v1/alert", backstory),
+		ArtifactBasePathKey: getBasePathFromDomainsAndPath("/v1/artifact", backstory),
+		AliasBasePathKey:    getBasePathFromDomainsAndPath("/v1/alias", backstory),
+		AssetBasePathKey:    getBasePathFromDomainsAndPath("/v1/asset", backstory),
+		IOCBasePathKey:      getBasePathFromDomainsAndPath("/v1/ioc", backstory),
 
-		RuleBasePathKey:           getBasePathFromDomainsAndPath("/v2/detect/rules", RegionalSubDomains[SearchAPIKey][region]),
-		FeedManagementBasePathKey: getBasePathFromDomainsAndPath("/v1/feeds", RegionalSubDomains[FeedManagementAPIKey][region]),
+		RuleBasePathKey:           getBasePathFromDomainsAndPath("/v2/detect/rules", backstory),
+		FeedManagementBasePathKey: getBasePathFromDomainsAndPath("/v1/feeds", backstory),
 
-		SubjectsBasePathKey: getBasePathFromDomainsAndPath("/v1/subjects", RegionalSubDomains[RBACAPIKey][region]),
+		SubjectsBasePathKey: getBasePathFromDomainsAndPath("/v1/subjects", backstory),
 
-		ReferenceListsPathKey: getBasePathFromDomainsAndPath("/v2/lists", RegionalSubDomains[ReferenceListsAPIKey][region]),
+		ReferenceListsPathKey: getBasePathFromDomainsAndPath("/v2/lists", backstory),
 	}
 
 	return DefaultBasePaths

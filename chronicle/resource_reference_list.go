@@ -26,7 +26,9 @@ func resourceReferenceList() *schema.Resource {
 			Delete: schema.DefaultTimeout(FiveMinutesTimeout),
 		},
 
-		Description: `Creates a reference list.`,
+		Description: `Creates a reference list.
+
+~> The Chronicle API does not support deleting reference lists. Destroying this resource only removes it from Terraform state; the list keeps existing in Chronicle.`,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -97,7 +99,7 @@ func resourceReferenceListRead(d *schema.ResourceData, meta interface{}) error {
 
 	referenceList, err := client.GetReferenceList(d.Id())
 	if err != nil {
-		return fmt.Errorf("error reading Schema: %s", err)
+		return HandleNotFoundError(err, d, d.Id())
 	}
 
 	if err := d.Set("name", referenceList.Name); err != nil {
@@ -131,11 +133,13 @@ func resourceReferenceListUpdate(d *schema.ResourceData, meta interface{}) error
 		Lines:       readStringSliceFromResource(d, "lines"),
 	}
 
-	linesHasChange, descriptionHasChange := true, false
-	if d.HasChange("description") {
-		descriptionHasChange = true
-	} else {
+	linesHasChange := d.HasChange("lines")
+	descriptionHasChange := d.HasChange("description")
+	if !descriptionHasChange {
 		referenceList.Description = ""
+	}
+	if !linesHasChange && !descriptionHasChange {
+		return resourceReferenceListRead(d, meta)
 	}
 
 	_, err := client.UpdateReferenceList(referenceList, linesHasChange, descriptionHasChange)
@@ -146,9 +150,9 @@ func resourceReferenceListUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceReferenceListDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] Deleting Schema: %#v", d.Id())
-	// Delete method hasn't been implemented by Google yet.
-	log.Printf("[DEBUG] Finished deleting Reference List %q", d.Id())
+	// The legacy Reference Lists API has no delete method: the list is only
+	// removed from Terraform state and keeps existing in Chronicle.
+	log.Printf("[WARN] Reference List %q cannot be deleted through the Chronicle API; it has been removed from Terraform state but still exists remotely", d.Id())
 
 	return nil
 }

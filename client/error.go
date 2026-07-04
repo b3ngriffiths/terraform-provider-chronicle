@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"google.golang.org/api/googleapi"
@@ -24,18 +23,21 @@ func errorForStatusCode(r *http.Response, err error) error {
 		return nil
 	}
 
-	message := ""
-	gError, ok := err.(*googleapi.Error)
-	if ok {
-		message = gError.Message
-	}
-
 	apiError := &ChronicleAPIError{
 		HTTPStatusCode: r.StatusCode,
-		Message:        message,
 	}
-	res, _ := io.ReadAll(r.Body)
-	_ = json.Unmarshal(res, &apiError)
+
+	// googleapi.CheckResponse has already consumed the response body; it keeps
+	// the raw payload in Error.Body, so parse the API's error details from there.
+	gError, ok := err.(*googleapi.Error)
+	if ok {
+		apiError.Message = gError.Message
+		_ = json.Unmarshal([]byte(gError.Body), apiError)
+	}
+
+	if apiError.Message == "" && ok {
+		apiError.Message = gError.Body
+	}
 
 	return apiError
 }

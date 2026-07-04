@@ -130,7 +130,7 @@ func resourceRBACSubjectDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Deleting Schema: %#v", d.Id())
 	err := client.DeleteSubject(d.Id())
 	if err != nil {
-		return handleNotFoundError(err, d, "Subject")
+		return HandleNotFoundError(err, d, "Subject")
 	}
 
 	log.Printf("[DEBUG] Finished deleting Subject %q", d.Id())

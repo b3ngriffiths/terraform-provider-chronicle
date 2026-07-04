@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -101,7 +100,7 @@ func (cli *Client) CreateFeed(displayName, logType, namespace string, labels []L
 
 	url := cli.FeedManagementBasePath
 
-	err = cli.rateLimiters.FeedManagementCreateFeed.Wait(context.Background())
+	err = cli.rateLimiters.FeedManagementCreateFeed.Wait(cli.context)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while creating feed %s", displayName))
 	}
@@ -117,9 +116,12 @@ func (cli *Client) CreateFeed(displayName, logType, namespace string, labels []L
 		return "", errors.Wrap(err, "failed decoding feed")
 	}
 
-	name := parseFeedID(result["name"].(string))
+	name, ok := result["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected create feed response: missing feed name")
+	}
 
-	return name, nil
+	return parseFeedID(name), nil
 }
 
 func (cli *Client) UpdateFeed(name, displayName, logType, namespace string, labels []Label, conf ConcreteFeedConfiguration) error {
@@ -135,14 +137,14 @@ func (cli *Client) UpdateFeed(name, displayName, logType, namespace string, labe
 
 	url := fmt.Sprintf("%s/%s", cli.FeedManagementBasePath, name)
 
-	err = cli.rateLimiters.FeedManagementUpdateFeed.Wait(context.Background())
+	err = cli.rateLimiters.FeedManagementUpdateFeed.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error Waiting for rateLimiter while updating feed %s", name))
 	}
 
 	_, err = sendRequest(cli, cli.backstoryAPIClient, "PATCH", cli.userAgent, url, feed)
 	if err != nil {
-		return errors.Wrap(err, "failed creating feed")
+		return errors.Wrap(err, "failed updating feed")
 	}
 
 	return nil
@@ -151,7 +153,7 @@ func (cli *Client) UpdateFeed(name, displayName, logType, namespace string, labe
 func (cli *Client) ReadFeed(name string) (*BaseFeed, *ConcreteFeedConfiguration, error) {
 	url := fmt.Sprintf("%s/%s", cli.FeedManagementBasePath, name)
 
-	err := cli.rateLimiters.FeedManagementGetFeed.Wait(context.Background())
+	err := cli.rateLimiters.FeedManagementGetFeed.Wait(cli.context)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, fmt.Sprintf("Error Waiting for rateLimiter while reading feed %s", name))
 	}
@@ -165,7 +167,10 @@ func (cli *Client) ReadFeed(name string) (*BaseFeed, *ConcreteFeedConfiguration,
 	if err := json.NewDecoder(reader).Decode(&result); err != nil {
 		return nil, nil, errors.Wrap(err, "failed decoding feed")
 	}
-	details := result["details"].(map[string]interface{})
+	details, ok := result["details"].(map[string]interface{})
+	if !ok {
+		return nil, nil, fmt.Errorf("unexpected feed response: missing details")
+	}
 
 	feedSourceType := extractFeedSourceTypeFromDetails(details)
 	logType := extractLogTypeFromDetails(details)
@@ -189,7 +194,7 @@ func (cli *Client) ReadFeed(name string) (*BaseFeed, *ConcreteFeedConfiguration,
 func (cli *Client) DestroyFeed(name string) error {
 	url := fmt.Sprintf("%s/%s", cli.FeedManagementBasePath, name)
 
-	err := cli.rateLimiters.FeedManagementDeleteFeed.Wait(context.Background())
+	err := cli.rateLimiters.FeedManagementDeleteFeed.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while destroying feed %s", name))
 	}
@@ -212,21 +217,24 @@ func (cli *Client) ChangeEnableFeed(id string, enabled bool) error {
 
 	url := fmt.Sprintf("%s/%s:%s", cli.FeedManagementBasePath, id, operation)
 
-	err := cli.rateLimiters.FeedManagementEnableFeed.Wait(context.Background())
+	err := cli.rateLimiters.FeedManagementEnableFeed.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter while change enable feed %s", id))
 	}
 
 	_, err = sendRequest(cli, cli.backstoryAPIClient, "POST", cli.userAgent, url, nil)
 	if err != nil {
-		return errors.Wrap(err, "failed creating feed")
+		return errors.Wrapf(err, "failed to %s feed", operation)
 	}
 
 	return nil
 }
 
 func fromFeedMapToBaseFeedAndConcreteConfiguration(configurationPropertyKey string, feedMap map[string]interface{}) (*BaseFeed, ConcreteFeedConfiguration, error) {
-	details := feedMap["details"].(map[string]interface{})
+	details, ok := feedMap["details"].(map[string]interface{})
+	if !ok {
+		return nil, nil, fmt.Errorf("unexpected feed response: missing details")
+	}
 
 	var baseFeed *BaseFeed
 	baseFeedBytes, err := json.Marshal(feedMap)
@@ -246,6 +254,9 @@ func fromFeedMapToBaseFeedAndConcreteConfiguration(configurationPropertyKey stri
 	feedSourceType := extractFeedSourceTypeFromDetails(details)
 	logType := extractLogTypeFromDetails(details)
 	concreteFeed := newConcreteFeedConfiguration(feedSourceType, logType)
+	if concreteFeed == nil {
+		return nil, nil, fmt.Errorf("unsupported feed source type: %s (log type: %s)", feedSourceType, logType)
+	}
 	err = json.Unmarshal(concreteFeedBytes, &concreteFeed)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed generating feed")
@@ -312,8 +323,10 @@ func newAPIConcreteFeedConfigurationFromLogType(logType string) ConcreteFeedConf
 }
 
 func extractFeedSourceTypeFromDetails(details map[string]interface{}) string {
-	return details["feedSourceType"].(string)
+	sourceType, _ := details["feedSourceType"].(string)
+	return sourceType
 }
 func extractLogTypeFromDetails(details map[string]interface{}) string {
-	return details["logType"].(string)
+	logType, _ := details["logType"].(string)
+	return logType
 }

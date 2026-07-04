@@ -157,7 +157,7 @@ func (f *ResourceFeedAmazonS3V2) flattenDetailsFromReadOperation(originalConf ch
 	return []map[string]interface{}{{
 		"s3_uri":                readS3Conf.S3URI,
 		"source_delete_options": originalS3Conf.SourceDeleteOptions, // not returned
-		"max_lookback_days":     readS3Conf.MaxLookbackDays,
+		"max_lookback_days":     lookbackDaysOrOriginal(readS3Conf.MaxLookbackDays, originalS3Conf.MaxLookbackDays),
 		// replace authentication block with original values because they are not returned within a read request
 		"authentication": []map[string]interface{}{authMap},
 	}}

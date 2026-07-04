@@ -226,6 +226,16 @@ func setBaseFeedProperties(d *schema.ResourceData, feed chronicle.BaseFeed) erro
 	return nil
 }
 
+// lookbackDaysOrOriginal returns the value read from the API unless it was
+// omitted from the response (0), in which case the configured value is kept
+// to avoid a permanent plan diff against the schema default.
+func lookbackDaysOrOriginal(read, original int) int {
+	if read == 0 {
+		return original
+	}
+	return read
+}
+
 func extractLabelsFromFeedResource(d *schema.ResourceData) []chronicle.Label {
 	labelsRaw := readMapFromResource(d, "labels")
 
