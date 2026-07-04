@@ -250,7 +250,7 @@ func resourceRuleDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Deleting Schema: %#v", d.Id())
 	err := client.DeleteRule(d.Id())
 	if err != nil {
-		return handleNotFoundError(err, d, "Rule")
+		return HandleNotFoundError(err, d, "Rule")
 	}
 
 	log.Printf("[DEBUG] Finished deleting Rule %q", d.Id())

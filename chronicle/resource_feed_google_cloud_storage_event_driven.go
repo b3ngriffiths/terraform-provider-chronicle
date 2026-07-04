@@ -91,6 +91,6 @@ func (f *ResourceFeedGoogleCloudStorageEventDriven) flattenDetailsFromReadOperat
 		"bucket_uri":            readGCSConf.BucketURI,
 		"pubsub_subscription":   readGCSConf.PubsubSubscription,
 		"source_delete_options": originalGCSConf.SourceDeleteOptions, // not returned
-		"max_lookback_days":     readGCSConf.MaxLookbackDays,
+		"max_lookback_days":     lookbackDaysOrOriginal(readGCSConf.MaxLookbackDays, originalGCSConf.MaxLookbackDays),
 	}}
 }

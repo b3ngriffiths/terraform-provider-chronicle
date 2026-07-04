@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -18,8 +17,8 @@ type Role struct {
 	Name        string       `json:"name"`
 	Title       string       `json:"title,omitempty"`
 	Description string       `json:"description,omitempty"`
-	CreateTime  string       `json:"createtime,omitempty"`
-	IsDefault   string       `json:"isdefeault,omitempty"`
+	CreateTime  string       `json:"createTime,omitempty"`
+	IsDefault   string       `json:"isDefault,omitempty"`
 	Permissions []Permission `json:"permissions,omitempty"`
 }
 
@@ -27,13 +26,13 @@ type Permission struct {
 	Name        string `json:"name"`
 	Title       string `json:"title,omitempty"`
 	Description string `json:"description,omitempty"`
-	CreateTime  string `json:"createtime,omitempty"`
+	CreateTime  string `json:"createTime,omitempty"`
 }
 
 func (cli *Client) GetSubject(name string) (*Subject, error) {
 	url := fmt.Sprintf("%s/%s", cli.SubjectsBasePath, name)
 
-	err := cli.rateLimiters.RBACGetSubject.Wait(context.Background())
+	err := cli.rateLimiters.RBACGetSubject.Wait(cli.context)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter getting subject %s", name))
 	}
@@ -55,7 +54,7 @@ func (cli *Client) GetSubject(name string) (*Subject, error) {
 func (cli *Client) CreateSubject(subject Subject) error {
 	url := cli.SubjectsBasePath
 
-	err := cli.rateLimiters.RBACCreateSubject.Wait(context.Background())
+	err := cli.rateLimiters.RBACCreateSubject.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter creating subject %v", subject))
 	}
@@ -71,7 +70,7 @@ func (cli *Client) CreateSubject(subject Subject) error {
 func (cli *Client) UpdateSubject(subject Subject) error {
 	url := fmt.Sprintf("%s/%s", cli.SubjectsBasePath, subject.Name)
 
-	err := cli.rateLimiters.RBACUpdateSubject.Wait(context.Background())
+	err := cli.rateLimiters.RBACUpdateSubject.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter updating subject %v", subject))
 	}
@@ -87,7 +86,7 @@ func (cli *Client) UpdateSubject(subject Subject) error {
 func (cli *Client) DeleteSubject(name string) error {
 	url := fmt.Sprintf("%s/%s", cli.SubjectsBasePath, name)
 
-	err := cli.rateLimiters.RBACDeleteSubject.Wait(context.Background())
+	err := cli.rateLimiters.RBACDeleteSubject.Wait(cli.context)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error waiting for rateLimiter deleting subject %s", name))
 	}

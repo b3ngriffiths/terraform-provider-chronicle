@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,7 +14,27 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+// isRetryableError reports whether a failed request may be retried: transport
+// errors and 429/5xx responses are retryable, while other API errors (e.g.
+// 400/403/404) are permanent and retrying them only delays the failure.
+func isRetryableError(err error) bool {
+	if !retry.IsRecoverable(err) {
+		return false
+	}
+
+	var apiErr *ChronicleAPIError
+	if errors.As(err, &apiErr) {
+		return apiErr.HTTPStatusCode == http.StatusTooManyRequests || apiErr.HTTPStatusCode >= 500
+	}
+
+	return true
+}
+
 func sendRequest(client *Client, httpClient *http.Client, method, userAgent string, rawurl string, body interface{}) ([]byte, error) {
+	if httpClient == nil {
+		return nil, fmt.Errorf("no credentials configured for API request to %s: configure the corresponding provider credentials attribute or environment variable", rawurl)
+	}
+
 	reqHeaders := make(http.Header)
 	reqHeaders.Set("Content-Type", "application/json")
 	reqHeaders.Set("User-Agent", userAgent)
@@ -25,19 +46,19 @@ func sendRequest(client *Client, httpClient *http.Client, method, userAgent stri
 			if body != nil {
 				err := json.NewEncoder(&buf).Encode(body)
 				if err != nil {
-					return err
+					return retry.Unrecoverable(err)
 				}
 			}
 
 			u, err := addQueryParams(rawurl, map[string]string{"alt": "json"})
 			if err != nil {
-				return err
+				return retry.Unrecoverable(err)
 			}
 
 			//nolint:all
 			req, err := http.NewRequest(method, u, &buf)
 			if err != nil {
-				return err
+				return retry.Unrecoverable(err)
 			}
 
 			req.Header = reqHeaders
@@ -52,18 +73,14 @@ func sendRequest(client *Client, httpClient *http.Client, method, userAgent stri
 				return errorForStatusCode(res, err)
 			}
 
-			if err != nil {
-				return err
-			}
 			return nil
-		}, retry.Attempts(client.requestAttempts), retry.DelayType(retry.BackOffDelay), retry.OnRetry(func(n uint, err error) {
+		}, retry.Attempts(client.requestAttempts), retry.DelayType(retry.BackOffDelay), retry.LastErrorOnly(true),
+		retry.RetryIf(isRetryableError), retry.OnRetry(func(n uint, err error) {
 			log.Printf("[DEBUG] Retrying request after error: %v", err)
 		}),
 	)
 	if err != nil {
-		// Get error from last attempt
-		e := err.(retry.Error)
-		return nil, e[len(e)-1]
+		return nil, err
 	}
 
 	if res == nil {

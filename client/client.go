@@ -161,14 +161,6 @@ func WithBackstoryAPICredentials(credentials string) Option {
 	}
 }
 
-func WithBackstoryAPIAccessToken(accesstoken string) Option {
-	return func(cli *Client) error {
-		var err error
-		cli.backstoryAPIClient, err = cli.initHTTPClient(defaultClientScopes, accesstoken, "", "")
-		return err
-	}
-}
-
 func WithBackstoryAPIEnvVar() Option {
 	return func(cli *Client) error {
 		var err error
@@ -181,14 +173,6 @@ func WithIngestionAPICredentials(credentials string) Option {
 	return func(cli *Client) error {
 		var err error
 		cli.ingestionAPIClient, err = cli.initHTTPClient(defaultClientScopes, "", credentials, "")
-		return err
-	}
-}
-
-func WithIngestionAPIAccessToken(accesstoken string) Option {
-	return func(cli *Client) error {
-		var err error
-		cli.ingestionAPIClient, err = cli.initHTTPClient(defaultClientScopes, accesstoken, "", "")
 		return err
 	}
 }
@@ -220,7 +204,7 @@ func WithForwarderAPIAccessToken(accesstoken string) Option {
 func WithForwarderAPIEnvVar() Option {
 	return func(cli *Client) error {
 		var err error
-		cli.forwarderAPIClient, err = cli.initHTTPClient(nil, "", "", ForwarderAPIEnvVar)
+		cli.forwarderAPIClient, err = cli.initHTTPClient(defaultClientScopes, "", "", ForwarderAPIEnvVar)
 		return err
 	}
 }
@@ -291,7 +275,8 @@ func (cli *Client) GetCredentials(clientScopes []string, accessToken, credential
 
 		creds, err := googleoauth.CredentialsFromJSON(cli.context, []byte(contents), clientScopes...)
 		if err != nil {
-			return &googleoauth.Credentials{}, fmt.Errorf("unable to parse credentials from '%s': %s", contents, err)
+			// Never include the credential contents in the error: it may hold a private key.
+			return &googleoauth.Credentials{}, fmt.Errorf("unable to parse the configured credentials: %s", err)
 		}
 
 		log.Printf("[INFO] Authenticating using configured Google JSON 'credentials'...")
@@ -306,17 +291,15 @@ func (cli *Client) GetCredentials(clientScopes []string, accessToken, credential
 			return &googleoauth.Credentials{}, fmt.Errorf("unable to base64 decode credentials from '%s': %s", envVariable, err)
 		}
 
-		log.Printf("[INFO] Authenticating using environmental variable")
-
 		creds, err := googleoauth.CredentialsFromJSON(cli.context, envDecoded, clientScopes...)
 		if err != nil {
-			return &googleoauth.Credentials{}, fmt.Errorf("unable to parse credentials from '%s': %s", envVariable, err)
+			return &googleoauth.Credentials{}, fmt.Errorf("unable to parse credentials from environment variable %q: %s", envVariable, err)
 		}
 
-		log.Printf("[INFO] Authenticating using environmental variable'...")
+		log.Printf("[INFO] Authenticating using environment variable %q...", envVariable)
 		log.Printf("[INFO]   -- Scopes: %s", clientScopes)
 		return creds, nil
 	}
 
-	return &googleoauth.Credentials{}, fmt.Errorf("error loading credentials: env variable not found: %s", env)
+	return &googleoauth.Credentials{}, fmt.Errorf("error loading credentials: environment variable %q not set", envVariable)
 }

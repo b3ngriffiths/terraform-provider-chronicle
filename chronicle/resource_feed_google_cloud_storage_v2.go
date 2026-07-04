@@ -83,6 +83,6 @@ func (f *ResourceFeedGoogleCloudStorageV2) flattenDetailsFromReadOperation(origi
 	return []map[string]interface{}{{
 		"bucket_uri":            readGCSConf.BucketURI,
 		"source_delete_options": originalGCSConf.SourceDeleteOptions, // not returned
-		"max_lookback_days":     readGCSConf.MaxLookbackDays,
+		"max_lookback_days":     lookbackDaysOrOriginal(readGCSConf.MaxLookbackDays, originalGCSConf.MaxLookbackDays),
 	}}
 }

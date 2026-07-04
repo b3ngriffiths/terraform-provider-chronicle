@@ -168,7 +168,7 @@ func (f *ResourceFeedAmazonSQSV2) flattenDetailsFromReadOperation(originalConf c
 		"queue":                 readSQSConf.Queue,
 		"s3_uri":                readSQSConf.S3URI,
 		"source_delete_options": originalSQSConf.SourceDeleteOptions, // not returned
-		"max_lookback_days":     readSQSConf.MaxLookbackDays,
+		"max_lookback_days":     lookbackDaysOrOriginal(readSQSConf.MaxLookbackDays, originalSQSConf.MaxLookbackDays),
 		// replace authentication block with original values because they are not returned within a read request
 		"authentication": []map[string]interface{}{authMap},
 	}}

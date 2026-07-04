@@ -29,22 +29,20 @@ Note that for each API you can only provide either credentials or access token. 
 - `alias_custom_endpoint` (String) Custom URL to alias endpoint.
 - `artifact_custom_endpoint` (String) Custom URL to artifact endpoint.
 - `asset_custom_endpoint` (String) Custom URL to asset endpoint.
-- `backstoryapi_access_token` (String) Backstory API access token. Local file path or content.
-- `backstoryapi_credentials` (String) Backstory API credential. Local file path or content.
+- `backstoryapi_credentials` (String, Sensitive) Backstory API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_BACKSTORY_CREDENTIALS environment variable, which expects base64 encoded credential.
-- `bigqueryapi_access_token` (String) BigQuery API access token. Local file path or content.
-- `bigqueryapi_credentials` (String) BigQuery API crendential. Local file path or content.
+- `bigqueryapi_access_token` (String, Sensitive) BigQuery API access token. Local file path or content.
+- `bigqueryapi_credentials` (String, Sensitive) BigQuery API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_BIGQUERY_CREDENTIALS environment variable, which expects base64 encoded credential.
 - `events_custom_endpoint` (String) Custom URL to events endpoint.
 - `feed_custom_endpoint` (String) Custom URL to feed endpoint.
-- `forwarderapi_access_token` (String) Forwarder API Access token. Local file path or content.
-- `forwarderapi_credentials` (String) Forwarder API crendential. Local file path or content.
+- `forwarderapi_access_token` (String, Sensitive) Forwarder API access token. Local file path or content.
+- `forwarderapi_credentials` (String, Sensitive) Forwarder API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_FORWARDER_CREDENTIALS environment variable, which expects base64 encoded credential.
-- `ingestionapi_access_token` (String) Ingestion API access token. Local file path or content.
-- `ingestionapi_credentials` (String) Ingestion API crendential. Local file path or content.
+- `ingestionapi_credentials` (String, Sensitive) Ingestion API credential. Local file path or content.
 				 It may be replaced by CHRONICLE_INGESTION_CREDENTIALS environment variable, which expects base64 encoded credential.
 - `ioc_custom_endpoint` (String) Custom URL to ioc endpoint.
-- `region` (String) Region to which send requests, available regions are: [us europe europe-west2 asia-southeast1]. It may be replaced by CHRONICLE_REGION environment variable.
+- `region` (String) Region to which send requests, available regions are: [us europe africa-south1 asia-northeast1 asia-south1 asia-southeast1 asia-southeast2 australia-southeast1 europe-central2 europe-west2 europe-west3 europe-west6 europe-west9 europe-west12 me-central1 me-central2 me-west1 northamerica-northeast2 southamerica-east1]. It may be replaced by CHRONICLE_REGION environment variable.
 - `request_attempts` (Number) Number of attempts per request. Attempts follow exponential back-off strategy. Defaults to 5 attempts.
 - `request_timeout` (Number) Request timeout in seconds. Defaults to 120 (s).
 - `rule_custom_endpoint` (String) Custom URL to rule endpoint.

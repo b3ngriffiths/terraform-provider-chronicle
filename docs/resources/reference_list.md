@@ -3,11 +3,14 @@ page_title: "chronicle_reference_list Resource - terraform-provider-chronicle"
 subcategory: ""
 description: |-
   Creates a reference list.
+  ~> The Chronicle API does not support deleting reference lists. Destroying this resource only removes it from Terraform state; the list keeps existing in Chronicle.
 ---
 
 # chronicle_reference_list (Resource)
 
 Creates a reference list.
+
+~> The Chronicle API does not support deleting reference lists. Destroying this resource only removes it from Terraform state; the list keeps existing in Chronicle.
 
 ## Example Usage
 
